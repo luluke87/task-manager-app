@@ -50,6 +50,17 @@ const userScheme = new Schema({
     }]
 })
 
+//haben wir hier die toJSON die automatisch aufgerufen wird überschrieben?? 
+userScheme.methods.toJSON = function () {
+    const user = this
+    const userObject = user.toObject()
+
+    delete userObject.password
+    delete userObject.tokens
+
+    return userObject
+}
+
 userScheme.methods.generateAuthToken = async function () {
     const user = this
     const token = jwt.sign({_id: user.id.toString()},'thisismynewcourse') //now we have a token
@@ -80,6 +91,12 @@ userScheme.pre('save', async function (next) {
         user.password = await bcrypt.hash(user.password, 8)
     }
     next()
+})
+
+userScheme.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'owner'
 })
 
 const User = mongoose.model('User', userScheme)

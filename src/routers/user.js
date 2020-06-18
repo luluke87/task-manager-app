@@ -28,6 +28,28 @@ router.post('/users/login', async (req, res) => {
     }
 })
 
+router.post('/users/logoutAll', auth, async (req, res) => {
+    try {
+        req.user.tokens = []
+        await req.user.save()
+        res.send()
+    } catch (error) {
+        res.status(500).send()
+    }
+})
+
+router.post('/users/logout', auth, async (req, res ) => {
+    try {
+        req.user.tokens = req.user.tokens.filter((token) => {
+            return token.token !== req.token
+        })
+        await req.user.save()
+        res.send()
+    } catch (error) {
+        res.status(500).send()
+    }
+})
+
 router.get('/users/me', auth, async (req, res) => {
     res.send(req.user) //this route now enables the user to see only his profile. thats smart. 
 
@@ -41,24 +63,24 @@ router.get('/users/me', auth, async (req, res) => {
     */
 })
 
-router.get('/users/:id', auth, async (req, res) => {
-    const _id = req.params.id //String ID is never converted to an ObjectID...that does mongoose for us
+// router.get('/users/:id', auth, async (req, res) => {
+//     const _id = req.params.id //String ID is never converted to an ObjectID...that does mongoose for us
 
-    try {
-        const user = await User.findById(_id)
-        if (!user) {
-            return res.status(404).send()
-        }
-        res.send(user)
-    } catch (error) {
-        res.status(500).send()
-    }
+//     try {
+//         const user = await User.findById(_id)
+//         if (!user) {
+//             return res.status(404).send()
+//         }
+//         res.send(user)
+//     } catch (error) {
+//         res.status(500).send()
+//     }
 
 
-    console.log(req.params) //params is an object with a single property --> id and the property is the value of id
-})
+//     console.log(req.params) //params is an object with a single property --> id and the property is the value of id
+// })
 
-router.patch('/users/:id', async (req, res) => {
+router.patch('/users/me', auth, async (req, res) => {
 
     //this makes sure, that only valid keys are updated.
 
@@ -74,37 +96,40 @@ router.patch('/users/:id', async (req, res) => {
 
     try {
         //this block gets the middleware running. 
-        const user = await User.findById(req.params.id)
+        //const user = await User.findById(req.params.id)
         //update contains a string
         updates.forEach((update) => {
-            user[update] = req.body[update]
+            req.user[update] = req.body[update]
         })
 
-        await user.save()
+        await req.user.save()
         //with new: true the user will be the updated user
         // const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
-        if (!user) {
-            return res.status(404).send()
-        }
-        res.send(user) //the current user data is sent back
+        // if (!user) {
+        //     return res.status(404).send()
+        // }
+        res.send(req.user) //the current user data is sent back
 
     } catch (error) {
         res.status(400).send(error)
     }
 })
 
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/me', auth, async (req, res) => {
     try {
-        const user = await User.findByIdAndDelete(req.params.id)
+        // const user = await User.findByIdAndDelete(req.user._id) //we have req.user aus we are using the middleware
 
-        if (!user) {
-            return res.status(404).send()
-        }
-        res.send(user)
+        // if (!user) {
+        //     return res.status(404).send()
+        // }
+        await req.user.remove()
+        res.send(req.user)
     } catch (error) {
         res.status(500).send()
     }
 })
+
+
 
 
 module.exports = router

@@ -17,6 +17,7 @@ const auth = async (req, res, next) => {
         if (!user) {
             throw new Error() //this triggers catch down below
         }
+        req.token = token //now the other route handlers have access to the token
         req.user = user
         next()
 

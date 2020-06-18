@@ -1,9 +1,14 @@
 const express = require('express')
 const router = express.Router()
+const auth = require('../middleware/authentication')
 const Task = require('../models/task')
 
-router.post('/tasks', async (req, res) => {
-    const task = new Task(req.body)
+router.post('/tasks', auth, async (req, res) => {
+    //const task = new Task(req.body)
+    const task = new Task({
+        ...req.body, //takes all properties of the body in here
+        owner: req.user._id
+    })
 
     try {
         await task.save()
@@ -12,14 +17,15 @@ router.post('/tasks', async (req, res) => {
         res.status(400).send(error)
     }
 })
-router.get('/tasks/:id', async (req, res) => {
+router.get('/tasks/', auth, async (req, res) => {
     const _id = req.params.id //String ID is never converted to an ObjectID...that does mongoose for us
     try {
-        const task = await Task.findById(_id)
-        if (!task) {
-            return res.status(404).send('no task with this ID could be found')
-        }
-        res.send(task)
+        //const tasks = await Task.find({ owner: req.user._id })
+        // if (!task) {
+        //     return res.status(404).send('no task with this ID could be found')
+        // }
+        await req.user.populate('tasks').execPopulate()
+        res.send(req.user.tasks)
     } catch (error) {
         res.status(500).send(error)
     }
@@ -34,7 +40,7 @@ router.get('/tasks', async (req, res) => {
     }
 })
 
-router.patch('/tasks/:id', async (req, res) => {
+router.patch('/tasks/:id', auth, async (req, res) => {
 
     //this makes sure, that only valid keys are updated.
 
@@ -49,8 +55,8 @@ router.patch('/tasks/:id', async (req, res) => {
     }
 
     try {
-        const task = await Task.findById(req.params.id)
-        // where to check??
+        const task = await Task.findOne({_id: req.params.id, owner: req.user._id})
+        // where to check?? already 
         if (!task) {
             return res.status(404).send()
         }

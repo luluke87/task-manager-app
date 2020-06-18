@@ -15,6 +15,9 @@ const app = express()
 
 const port = process.env.PORT || 3000
 
+// app.use((req, res, next) => {
+//     res.status(503).send({maintenanceMessage:'Site is under Maintenance'})
+// })
 
 app.use(express.json()) //automatically parses JSON to an object
 app.use(UserRouter)
@@ -38,4 +41,26 @@ app.listen(port, () => {
 
 // myFunction()
 
+//when we call res.send JSON.stringify ist called in the background and this calls toJSON?! toJSON gets called whenever to object is converted to a string? sounds good
+// const pet = {
+//     name: 'hal'
+// }
 
+// pet.toJSON = function () {
+//     console.log(this)
+//     return {} 
+// }
+
+// console.log(JSON.stringify(pet))
+
+
+const main = async () => {
+    // const task = await Task.findById("5eeb06d95987c87ac0b81111")
+    // await task.populate('owner').execPopulate() //find the user who is associated....owner is now not only the id but the whole profile
+    // console.log(task.owner)
+    const user = await User.findById('5eeb09b48f49597b34e2eb48')
+    await user.populate('tasks').execPopulate()
+    console.log(user.tasks)
+}
+
+main()
